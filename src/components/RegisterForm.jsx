@@ -1,5 +1,6 @@
 import { useState } from "react";
-import "./RegisterForm.css";
+import { auth, updateProfile } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
 function RegisterForm() {
   const [nombre, setNombre] = useState("");
@@ -7,11 +8,11 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const validarCorreo = (correo) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
-  };
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const validarCorreo = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validarCorreo(correo)) {
@@ -24,10 +25,21 @@ function RegisterForm() {
       return;
     }
 
-    setError(""); // Si todo está bien, limpiar errores
+    try {
+     // RegisterForm.jsx
+const userCredential = await auth.createUserWithEmailAndPassword(correo, password);
+await updateProfile(userCredential.user, { displayName: nombre });
 
-    console.log("Registro exitoso:", { nombre, correo, password });
-    alert("Registro exitoso");
+      alert("Registro exitoso");
+      navigate("/login");
+
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setError("Este correo ya está registrado.");
+      } else {
+        setError("Ocurrió un error al registrar el usuario.");
+      }
+    }
   };
 
   return (
